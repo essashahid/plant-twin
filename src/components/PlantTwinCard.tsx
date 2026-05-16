@@ -10,7 +10,7 @@ import {
   Clock,
   Heart,
 } from "lucide-react";
-import { plant } from "@/data/plantData";
+import { usePlant } from "@/context/PlantContext";
 
 /* Circular health ring */
 function HealthRing({ score }: { score: number }) {
@@ -90,6 +90,10 @@ function Indicator({
 }
 
 export default function PlantTwinCard() {
+  const { dashboardData } = usePlant();
+  if (!dashboardData) return null;
+  const { plant } = dashboardData;
+
   return (
     <div className="glass-card rounded-2xl p-6 animate-fade-in-up animate-delay-100">
       {/* Title Row */}

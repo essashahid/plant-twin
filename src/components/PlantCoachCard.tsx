@@ -1,9 +1,13 @@
 "use client";
 
 import { Bot, Zap, AlertCircle, ArrowRight, CalendarCheck } from "lucide-react";
-import { coachData } from "@/data/plantData";
+import { usePlant } from "@/context/PlantContext";
 
 export default function PlantCoachCard() {
+  const { dashboardData } = usePlant();
+  if (!dashboardData) return null;
+  const { coachData } = dashboardData;
+
   return (
     <div className="glass-card rounded-2xl p-6 animate-fade-in-up animate-delay-400 relative overflow-hidden">
       {/* Subtle AI glow */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { Droplets, Camera, Sprout, Bug, FlaskConical } from "lucide-react";
-import { careTimeline } from "@/data/plantData";
+import { usePlant } from "@/context/PlantContext";
 
 const iconMap = {
   water: Droplets,
@@ -20,6 +20,10 @@ const colorMap = {
 };
 
 export default function CareTimeline() {
+  const { dashboardData } = usePlant();
+  if (!dashboardData) return null;
+  const { careTimeline } = dashboardData;
+
   return (
     <div className="glass-card rounded-2xl p-6 animate-fade-in-up animate-delay-500">
       <h3 className="text-lg font-semibold text-text-primary mb-1">
@@ -33,11 +37,11 @@ export default function CareTimeline() {
 
         <div className="space-y-4">
           {careTimeline.map((entry, i) => {
-            const Icon = iconMap[entry.icon];
+            const Icon = iconMap[entry.icon as keyof typeof iconMap] || iconMap.camera;
             return (
               <div key={i} className="flex items-start gap-4 relative group">
                 <div
-                  className={`relative z-10 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg ring-1 ${colorMap[entry.icon]} transition-all group-hover:scale-110`}
+                  className={`relative z-10 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg ring-1 ${colorMap[entry.icon as keyof typeof colorMap] || colorMap.camera} transition-all group-hover:scale-110`}
                 >
                   <Icon className="h-3.5 w-3.5" />
                 </div>

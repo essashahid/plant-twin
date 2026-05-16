@@ -1,7 +1,7 @@
 "use client";
 
 import { Heart, Sprout, Droplets, Sun } from "lucide-react";
-import { plant } from "@/data/plantData";
+import { usePlant } from "@/context/PlantContext";
 
 interface MetricCardProps {
   title: string;
@@ -41,6 +41,10 @@ function MetricCard({
 }
 
 export default function HealthMetricCards() {
+  const { dashboardData } = usePlant();
+  if (!dashboardData) return null;
+  const { plant } = dashboardData;
+
   const metrics = [
     {
       title: "Health Score",

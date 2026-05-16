@@ -1,9 +1,13 @@
 "use client";
 
 import { ArrowRight, AlertTriangle, XCircle } from "lucide-react";
-import { comparisonData } from "@/data/plantData";
+import { usePlant } from "@/context/PlantContext";
 
 export default function ActualVsIdealComparison() {
+  const { dashboardData } = usePlant();
+  if (!dashboardData) return null;
+  const { comparisonData } = dashboardData;
+
   return (
     <div className="glass-card rounded-2xl p-6 animate-fade-in-up animate-delay-300">
       <div className="mb-5">

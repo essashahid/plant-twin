@@ -1,7 +1,7 @@
 "use client";
 
 import { MapPin, Sun, Wind, Thermometer, Droplets, Flame, CloudOff } from "lucide-react";
-import { environmentData } from "@/data/plantData";
+import { usePlant } from "@/context/PlantContext";
 
 const iconMap = {
   location: MapPin,
@@ -14,13 +14,17 @@ const iconMap = {
 };
 
 export default function EnvironmentPanel() {
+  const { dashboardData } = usePlant();
+  if (!dashboardData) return null;
+  const { environmentData } = dashboardData;
+
   return (
     <div className="glass-card rounded-2xl p-6 animate-fade-in-up animate-delay-700">
       <h3 className="text-lg font-semibold text-text-primary mb-1">Environment</h3>
       <p className="text-xs text-text-muted mb-5">Growing conditions overview</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {environmentData.map((item, i) => {
-          const Icon = iconMap[item.icon];
+          const Icon = iconMap[item.icon as keyof typeof iconMap] || iconMap.location;
           return (
             <div key={i} className="flex items-center gap-2.5 rounded-lg bg-surface-primary/40 px-3 py-2.5 ring-1 ring-surface-border/30">
               <Icon className="h-4 w-4 text-text-muted shrink-0" />

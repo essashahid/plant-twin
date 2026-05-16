@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, ChevronRight } from "lucide-react";
-import { reminders } from "@/data/plantData";
+import { usePlant } from "@/context/PlantContext";
 
 const priorityStyles = {
   high: "bg-status-danger/10 text-status-danger ring-status-danger/20",
@@ -10,6 +10,10 @@ const priorityStyles = {
 };
 
 export default function ReminderPanel() {
+  const { dashboardData } = usePlant();
+  if (!dashboardData) return null;
+  const { reminders } = dashboardData;
+
   return (
     <div className="glass-card rounded-2xl p-6 animate-fade-in-up animate-delay-600">
       <div className="flex items-center gap-2 mb-1">
@@ -24,7 +28,7 @@ export default function ReminderPanel() {
             className="flex items-center justify-between rounded-lg bg-surface-primary/40 px-3.5 py-3 ring-1 ring-surface-border/40 hover:bg-surface-card-hover/30 group cursor-pointer transition-all"
           >
             <div className="flex items-center gap-3">
-              <span className={`inline-flex h-2 w-2 rounded-full ring-2 ${priorityStyles[r.priority]}`} />
+              <span className={`inline-flex h-2 w-2 rounded-full ring-2 ${priorityStyles[r.priority as keyof typeof priorityStyles] || priorityStyles.low}`} />
               <div>
                 <p className="text-sm text-text-primary">{r.text}</p>
                 <p className="text-[11px] text-text-dim">{r.timeframe}</p>

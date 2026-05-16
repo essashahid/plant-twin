@@ -2,9 +2,13 @@
 
 import Image from "next/image";
 import { ImageIcon } from "lucide-react";
-import { photoProgress } from "@/data/plantData";
+import { usePlant } from "@/context/PlantContext";
 
 export default function PhotoProgressGrid() {
+  const { dashboardData } = usePlant();
+  if (!dashboardData) return null;
+  const { photoProgress } = dashboardData;
+
   return (
     <div className="glass-card rounded-2xl p-6 animate-fade-in-up animate-delay-600">
       <div className="flex items-center gap-2 mb-1">
