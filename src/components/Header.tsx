@@ -2,6 +2,21 @@
 
 import { Leaf, Camera, ClipboardList } from "lucide-react";
 import { usePlant } from "@/context/PlantContext";
+import { StatusTone } from "@/types/plant";
+
+const statusPillTone: Record<StatusTone, string> = {
+  good: "bg-status-good/10 text-status-good ring-status-good/20",
+  warning: "bg-status-warning/10 text-status-warning ring-status-warning/20",
+  danger: "bg-status-danger/10 text-status-danger ring-status-danger/20",
+  info: "bg-status-info/10 text-status-info ring-status-info/20",
+};
+
+const statusDotTone: Record<StatusTone, string> = {
+  good: "bg-status-good",
+  warning: "bg-status-warning",
+  danger: "bg-status-danger",
+  info: "bg-status-info",
+};
 
 export default function Header() {
   const { dashboardData } = usePlant();
@@ -32,8 +47,8 @@ export default function Header() {
                 {plant ? plant.name : "Setup New Plant"}
               </h2>
               {plant && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-status-warning/10 px-2.5 py-0.5 text-xs font-medium text-status-warning ring-1 ring-status-warning/20">
-                  <span className="h-1.5 w-1.5 rounded-full bg-status-warning animate-pulse" />
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${statusPillTone[plant.statusTone]}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${statusDotTone[plant.statusTone]}`} />
                   {plant.status}
                 </span>
               )}

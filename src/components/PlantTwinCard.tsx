@@ -7,12 +7,13 @@ import {
   Sprout,
   FlaskConical,
   TrendingDown,
+  TrendingUp,
   Clock,
   Heart,
 } from "lucide-react";
 import { usePlant } from "@/context/PlantContext";
+import { StatusTone } from "@/types/plant";
 
-/* Circular health ring */
 function HealthRing({ score }: { score: number }) {
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
@@ -56,7 +57,13 @@ function HealthRing({ score }: { score: number }) {
   );
 }
 
-/* Small indicator badges around plant */
+const toneToIndicator: Record<StatusTone, "good" | "warning" | "danger"> = {
+  good: "good",
+  warning: "warning",
+  danger: "danger",
+  info: "warning",
+};
+
 function Indicator({
   icon: Icon,
   label,
@@ -94,9 +101,13 @@ export default function PlantTwinCard() {
   if (!dashboardData) return null;
   const { plant } = dashboardData;
 
+  const stageOnTrack = plant.stage === plant.idealStage;
+  const TrendIcon = stageOnTrack ? TrendingUp : TrendingDown;
+  const trendColor = stageOnTrack ? "text-status-good" : "text-status-warning";
+  const trendLabel = stageOnTrack ? "On track" : "Behind ideal stage";
+
   return (
     <div className="glass-card rounded-2xl p-6 animate-fade-in-up animate-delay-100">
-      {/* Title Row */}
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="text-lg font-semibold text-text-primary">
@@ -113,20 +124,17 @@ export default function PlantTwinCard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
-        {/* Plant Image */}
         <div className="relative rounded-xl overflow-hidden bg-surface-primary ring-1 ring-surface-border group">
           <div className="aspect-[4/3] relative">
             <Image
-              src="/chilli-hero.png"
-              alt="Balcony Chilli Plant"
+              src={plant.photoFull || "/chilli-hero.png"}
+              alt={plant.name}
               fill
               className="object-cover transition-transform duration-700 group-hover:scale-105"
               priority
             />
-            {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-surface-primary/80 via-transparent to-transparent" />
 
-            {/* Bottom info */}
             <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
@@ -136,10 +144,8 @@ export default function PlantTwinCard() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <TrendingDown className="h-3.5 w-3.5 text-status-warning" />
-                  <span className="text-xs text-text-muted">
-                    Slower than ideal
-                  </span>
+                  <TrendIcon className={`h-3.5 w-3.5 ${trendColor}`} />
+                  <span className="text-xs text-text-muted">{trendLabel}</span>
                 </div>
               </div>
               <HealthRing score={plant.healthScore} />
@@ -147,7 +153,6 @@ export default function PlantTwinCard() {
           </div>
         </div>
 
-        {/* Right Column: Status Indicators */}
         <div className="flex flex-col gap-2.5">
           <div className="flex items-center gap-2 mb-1">
             <Heart className="h-4 w-4 text-brand-400" />
@@ -160,25 +165,25 @@ export default function PlantTwinCard() {
             icon={Droplets}
             label="Soil Moisture"
             value={plant.soilStatus}
-            status="warning"
+            status={toneToIndicator[plant.soilTone]}
           />
           <Indicator
             icon={Sun}
             label="Sunlight"
-            value="Low–moderate"
-            status="warning"
+            value={plant.sunlightLabel}
+            status={toneToIndicator[plant.sunlightTone]}
           />
           <Indicator
             icon={Droplets}
             label="Watering"
             value={plant.wateringStatus}
-            status="warning"
+            status={toneToIndicator[plant.wateringTone]}
           />
           <Indicator
             icon={FlaskConical}
             label="Nutrients"
             value={plant.nutrientStatus}
-            status="danger"
+            status={toneToIndicator[plant.nutrientTone]}
           />
 
           <div className="mt-auto rounded-lg bg-brand-500/5 px-3 py-2.5 ring-1 ring-brand-500/10">

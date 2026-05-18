@@ -2,6 +2,7 @@
 
 import { Heart, Sprout, Droplets, Sun } from "lucide-react";
 import { usePlant } from "@/context/PlantContext";
+import { StatusTone } from "@/types/plant";
 
 interface MetricCardProps {
   title: string;
@@ -40,26 +41,63 @@ function MetricCard({
   );
 }
 
+const accentForTone: Record<StatusTone, string> = {
+  good: "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20",
+  warning: "bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20",
+  danger: "bg-red-500/15 text-red-400 ring-1 ring-red-500/20",
+  info: "bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/20",
+};
+
 export default function HealthMetricCards() {
   const { dashboardData } = usePlant();
   if (!dashboardData) return null;
   const { plant } = dashboardData;
 
+  const healthDescription =
+    plant.healthScore >= 85
+      ? "Healthy and tracking ideal growth — keep the routine going."
+      : plant.healthScore >= 70
+      ? "Stable, but a few care factors need attention soon."
+      : plant.healthScore >= 55
+      ? "Stressed — adjust the top issues to recover quickly."
+      : "Needs urgent care. Review the top recommendations.";
+
+  const stageDescription =
+    plant.stage === plant.idealStage
+      ? `On track for the ${plant.idealStage.toLowerCase()} stage.`
+      : `Currently ${plant.stage.toLowerCase()} — expected to be ${plant.idealStage.toLowerCase()}.`;
+
+  const wateringDescription =
+    plant.wateringTone === "danger"
+      ? "Watering is overdue — give it a drink today."
+      : plant.wateringTone === "warning"
+      ? "Watering due soon. Aim for a steady 2–3 day rhythm."
+      : "Watering rhythm looks healthy.";
+
+  const sunlightValue =
+    plant.sunlightHours === "" ? "Not set" : `${plant.sunlightHours} hrs/day`;
+  const sunlightDescription =
+    plant.sunlightTone === "danger"
+      ? "Well below the ideal 6–8 hours. Move to a brighter spot if possible."
+      : plant.sunlightTone === "warning"
+      ? "Slightly under ideal. Growth may be a touch slower."
+      : plant.sunlightTone === "good"
+      ? "Right in the chilli sweet spot."
+      : "Add a sunlight estimate to refine insights.";
+
   const metrics = [
     {
       title: "Health Score",
       value: `${plant.healthScore}/100`,
-      description:
-        "Plant looks stable, but growth is slower than expected for this stage.",
+      description: healthDescription,
       icon: Heart,
-      accent: "bg-brand-500/15 text-brand-400 ring-1 ring-brand-500/20",
+      accent: accentForTone[plant.statusTone],
       delay: "animate-delay-200",
     },
     {
       title: "Growth Stage",
       value: plant.stage,
-      description:
-        "Currently in early vegetative. Should ideally be approaching early flowering by now.",
+      description: stageDescription,
       icon: Sprout,
       accent: "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20",
       delay: "animate-delay-300",
@@ -67,19 +105,17 @@ export default function HealthMetricCards() {
     {
       title: "Watering",
       value: plant.wateringStatus,
-      description:
-        "Next watering is due tomorrow. Maintain a regular 2–3 day schedule.",
+      description: wateringDescription,
       icon: Droplets,
-      accent: "bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/20",
+      accent: accentForTone[plant.wateringTone],
       delay: "animate-delay-400",
     },
     {
       title: "Sunlight",
-      value: `${plant.sunlightHours} hrs/day`,
-      description:
-        "Below the ideal 6–8 hours. Consider moving to a sunnier spot.",
+      value: sunlightValue,
+      description: sunlightDescription,
       icon: Sun,
-      accent: "bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20",
+      accent: accentForTone[plant.sunlightTone],
       delay: "animate-delay-500",
     },
   ];

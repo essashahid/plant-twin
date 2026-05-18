@@ -1,7 +1,15 @@
 "use client";
 
-import { ArrowRight, AlertTriangle, XCircle } from "lucide-react";
+import { ArrowRight, AlertTriangle, XCircle, CheckCircle2, Info } from "lucide-react";
 import { usePlant } from "@/context/PlantContext";
+import { StatusTone } from "@/types/plant";
+
+const toneStyles: Record<StatusTone, { text: string; Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }> = {
+  good: { text: "text-status-good", Icon: CheckCircle2 },
+  warning: { text: "text-status-warning", Icon: AlertTriangle },
+  danger: { text: "text-status-danger", Icon: XCircle },
+  info: { text: "text-status-info", Icon: Info },
+};
 
 export default function ActualVsIdealComparison() {
   const { dashboardData } = usePlant();
@@ -41,43 +49,41 @@ export default function ActualVsIdealComparison() {
             </tr>
           </thead>
           <tbody>
-            {comparisonData.map((row, i) => (
-              <tr
-                key={row.metric}
-                className={`group transition-colors hover:bg-surface-card-hover/30 ${
-                  i < comparisonData.length - 1
-                    ? "border-b border-surface-border/50"
-                    : ""
-                }`}
-              >
-                <td className="py-3.5 pr-4 font-medium text-text-primary">
-                  {row.metric}
-                </td>
-                <td className="py-3.5 px-4 text-text-muted">{row.yours}</td>
-                <td className="py-3.5 px-4 text-center">
-                  <ArrowRight className="h-3 w-3 text-text-dim mx-auto" />
-                </td>
-                <td className="py-3.5 px-4 text-brand-300">{row.ideal}</td>
-                <td className="py-3.5 pl-4">
-                  <div className="flex items-center justify-end gap-1.5">
-                    {row.statusColor === "red" ? (
-                      <XCircle className="h-3.5 w-3.5 text-status-danger" />
-                    ) : (
-                      <AlertTriangle className="h-3.5 w-3.5 text-status-warning" />
+            {comparisonData.map((row, i) => {
+              const { text, Icon } = toneStyles[row.statusTone];
+              return (
+                <tr
+                  key={row.metric}
+                  className={`group transition-colors hover:bg-surface-card-hover/30 ${
+                    i < comparisonData.length - 1
+                      ? "border-b border-surface-border/50"
+                      : ""
+                  }`}
+                >
+                  <td className="py-3.5 pr-4 align-top">
+                    <p className="font-medium text-text-primary">{row.metric}</p>
+                    {row.note && (
+                      <p className="text-[11px] text-text-dim mt-0.5 max-w-[220px]">
+                        {row.note}
+                      </p>
                     )}
-                    <span
-                      className={`text-xs font-medium ${
-                        row.statusColor === "red"
-                          ? "text-status-danger"
-                          : "text-status-warning"
-                      }`}
-                    >
-                      {row.status}
-                    </span>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="py-3.5 px-4 text-text-muted align-top">{row.yours}</td>
+                  <td className="py-3.5 px-4 text-center align-top">
+                    <ArrowRight className="h-3 w-3 text-text-dim mx-auto" />
+                  </td>
+                  <td className="py-3.5 px-4 text-brand-300 align-top">{row.ideal}</td>
+                  <td className="py-3.5 pl-4 align-top">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Icon className={`h-3.5 w-3.5 ${text}`} />
+                      <span className={`text-xs font-medium ${text}`}>
+                        {row.status}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

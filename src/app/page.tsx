@@ -11,6 +11,7 @@ import PhotoProgressGrid from "@/components/PhotoProgressGrid";
 import EnvironmentPanel from "@/components/EnvironmentPanel";
 import FeatureTabs from "@/components/FeatureTabs";
 import AddPlantFlow from "@/components/AddPlantFlow";
+import RiskSummaryCard from "@/components/RiskSummaryCard";
 import { usePlant } from "@/context/PlantContext";
 
 export default function Home() {
@@ -46,6 +47,9 @@ export default function Home() {
               <ActualVsIdealComparison />
               <PlantCoachCard />
             </div>
+
+            {/* 4b. Risks & Recommendations */}
+            <RiskSummaryCard />
 
             {/* 5. Timeline + Reminders (two-column on desktop) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
