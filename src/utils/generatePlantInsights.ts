@@ -6,6 +6,7 @@ import {
   Reminder,
   RiskItem,
   CoachData,
+  ProgressUpdate,
 } from "@/types/plant";
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -73,12 +74,17 @@ function daysSince(iso: string): number | null {
   return Math.max(0, Math.floor((Date.now() - t) / (1000 * 60 * 60 * 24)));
 }
 
-export function generatePlantInsights(data: PlantFormData): DashboardData {
+export function generatePlantInsights(
+  data: PlantFormData,
+  progressUpdates?: ProgressUpdate[]
+): DashboardData {
   const issues: string[] = [];
   const recommendedActions: string[] = [];
   const reminders: Reminder[] = [];
   const risks: RiskItem[] = [];
   const positives: string[] = [];
+
+  const latestUpdate = progressUpdates && progressUpdates.length > 0 ? progressUpdates[0] : null;
 
   let healthScore = 85;
 
@@ -130,7 +136,8 @@ export function generatePlantInsights(data: PlantFormData): DashboardData {
   }
 
   // === 2. Soil & watering ===
-  const soil = data.soilCondition;
+  // Use latest progress update if available, otherwise use form data
+  const soil = latestUpdate ? latestUpdate.soilCondition : data.soilCondition;
   let soilTone: StatusTone = "good";
   let soilStatusText = soil || "Unknown";
   let wateringStatus = "On schedule";
@@ -310,6 +317,70 @@ export function generatePlantInsights(data: PlantFormData): DashboardData {
     });
   }
 
+  // === 6b. Progress update visible issues & care actions ===
+  if (latestUpdate) {
+    if (latestUpdate.visibleIssue === "Yellow leaves") {
+      issues.push("Yellowing leaves reported in latest update");
+      reminders.push({
+        text: "Upload leaf close-up",
+        timeframe: "In 2–3 days",
+        priority: "medium",
+      });
+    } else if (latestUpdate.visibleIssue === "Drooping leaves") {
+      issues.push("Drooping leaves may indicate watering or heat stress");
+      recommendedActions.push("Check soil moisture and ensure good airflow");
+    } else if (latestUpdate.visibleIssue === "Spots on leaves") {
+      reminders.push({
+        text: "Upload leaf close-up",
+        timeframe: "In 2–3 days",
+        priority: "medium",
+      });
+      issues.push("Spots on leaves worth monitoring");
+    } else if (latestUpdate.visibleIssue === "Pest signs") {
+      reminders.push({
+        text: "Inspect leaves and isolate plant if needed",
+        timeframe: "Today",
+        priority: "high",
+      });
+      issues.push("Pest signs reported");
+    } else if (latestUpdate.visibleIssue === "Slow growth") {
+      issues.push("Slower growth noted");
+    } else if (latestUpdate.visibleIssue === "Wilting") {
+      issues.push("Wilting observed — check watering and drainage");
+    }
+
+    if (latestUpdate.overallCondition === "Looks better") {
+      healthScore += 8;
+      positives.push("Plant condition improving");
+    } else if (latestUpdate.overallCondition === "Looks worse") {
+      healthScore -= 8;
+      issues.push("Plant condition deteriorating");
+    }
+
+    if (latestUpdate.wateredToday) {
+      positives.push("Watered today");
+      healthScore += 3;
+      wateringStatus = "Recently watered";
+      wateringTone = "good";
+    }
+
+    if (latestUpdate.fertilizedToday) {
+      positives.push("Fertilized today");
+      healthScore += 3;
+      nutrientStatus = "Recently fertilized";
+      nutrientTone = "good";
+    }
+
+    if (latestUpdate.compostAddedToday) {
+      positives.push("Compost added today");
+      healthScore += 2;
+    }
+
+    if (latestUpdate.pesticideAppliedToday) {
+      positives.push("Pesticide applied (preventive care)");
+    }
+  }
+
   // === Always-on photo reminders ===
   reminders.push({
     text: "Upload new full plant photo",
@@ -348,20 +419,45 @@ export function generatePlantInsights(data: PlantFormData): DashboardData {
   const plantLabel = data.name?.trim() || data.type || "your plant";
 
   let summary: string;
-  if (topIssues.length === 0) {
-    summary = `${plantLabel} is doing well. Keep the current routine and check growth again in 3–4 days.`;
-  } else if (topIssues.length === 1) {
-    summary = `${plantLabel} is mostly stable, but ${topIssues[0].toLowerCase()}. ${
-      recommendedActions[0] ?? "Keep an eye on it"
-    } and check again in 3–4 days.`;
+  if (latestUpdate) {
+    const updateContext = `Your latest update shows ${
+      latestUpdate.visibleIssue !== "None" ? `${latestUpdate.visibleIssue.toLowerCase()} and ` : ""
+    }${latestUpdate.soilCondition.toLowerCase()} soil. `;
+
+    if (topIssues.length === 0) {
+      summary =
+        updateContext +
+        `${plantLabel} is looking stable. ${recommendedActions[0] ?? "Continue current care"} and upload another photo in 3–4 days.`;
+    } else if (topIssues.length === 1) {
+      summary =
+        updateContext +
+        `The main concern is ${topIssues[0].toLowerCase()}. ${recommendedActions[0] ?? "Watch closely"} and check again in 3–4 days.`;
+    } else {
+      const issueList = topIssues
+        .map((s, i) => (i === topIssues.length - 1 ? `and ${s.toLowerCase()}` : s.toLowerCase()))
+        .join(topIssues.length > 2 ? ", " : " ");
+      summary =
+        updateContext +
+        `The combined factors of ${issueList} may be slowing growth. ${
+          recommendedActions[0] ?? "Address the top priority"
+        } first, then monitor closely over 3–4 days.`;
+    }
   } else {
-    const issueList = topIssues
-      .map((s, i) => (i === topIssues.length - 1 ? `and ${s.toLowerCase()}` : s.toLowerCase()))
-      .join(topIssues.length > 2 ? ", " : " ");
-    const action = recommendedActions[0] ?? "watch closely";
-    summary = `${plantLabel} is ${
-      healthScore >= 70 ? "stable but slightly behind ideal" : "showing signs of stress"
-    }. The main factors are ${issueList}. ${action} and check again in 3–4 days.`;
+    if (topIssues.length === 0) {
+      summary = `${plantLabel} is doing well. Keep the current routine and check growth again in 3–4 days.`;
+    } else if (topIssues.length === 1) {
+      summary = `${plantLabel} is mostly stable, but ${topIssues[0].toLowerCase()}. ${
+        recommendedActions[0] ?? "Keep an eye on it"
+      } and check again in 3–4 days.`;
+    } else {
+      const issueList = topIssues
+        .map((s, i) => (i === topIssues.length - 1 ? `and ${s.toLowerCase()}` : s.toLowerCase()))
+        .join(topIssues.length > 2 ? ", " : " ");
+      const action = recommendedActions[0] ?? "watch closely";
+      summary = `${plantLabel} is ${
+        healthScore >= 70 ? "stable but slightly behind ideal" : "showing signs of stress"
+      }. The main factors are ${issueList}. ${action} and check again in 3–4 days.`;
+    }
   }
 
   const confidence: CoachData["confidence"] =
@@ -470,7 +566,7 @@ export function generatePlantInsights(data: PlantFormData): DashboardData {
       : "Low";
 
   // === Care timeline ===
-  const careTimeline: DashboardData["careTimeline"] = [
+  const careTimelineEntries: DashboardData["careTimeline"] = [
     { date: "Today", event: "Setup PlantTwin profile", icon: "camera" },
     ...(data.lastWatered
       ? [{ date: formatDate(data.lastWatered), event: "Watered", icon: "water" as const }]
@@ -491,6 +587,34 @@ export function generatePlantInsights(data: PlantFormData): DashboardData {
       ? [{ date: "Recently", event: "Compost added", icon: "soil" as const }]
       : []),
   ];
+
+  if (latestUpdate) {
+    const updateDate = formatDate(latestUpdate.date);
+    if (latestUpdate.photos.plant) {
+      careTimelineEntries.unshift({ date: updateDate, event: "Progress photo uploaded", icon: "camera" });
+    }
+    if (latestUpdate.wateredToday) {
+      careTimelineEntries.unshift({ date: updateDate, event: "Watered", icon: "water" });
+    }
+    if (latestUpdate.fertilizedToday) {
+      careTimelineEntries.unshift({ date: updateDate, event: "Fertilizer applied", icon: "nutrient" });
+    }
+    if (latestUpdate.pesticideAppliedToday) {
+      careTimelineEntries.unshift({ date: updateDate, event: "Pesticide applied", icon: "pest" });
+    }
+    if (latestUpdate.compostAddedToday) {
+      careTimelineEntries.unshift({ date: updateDate, event: "Compost added", icon: "soil" });
+    }
+    if (latestUpdate.visibleIssue !== "None") {
+      careTimelineEntries.unshift({
+        date: updateDate,
+        event: `Observed: ${latestUpdate.visibleIssue}`,
+        icon: "camera",
+      });
+    }
+  }
+
+  const careTimeline = careTimelineEntries;
 
   // Cap reminders to the most useful 5, prioritized by high → medium → low.
   const sortedReminders = [...reminders].sort((a, b) => {
@@ -517,7 +641,7 @@ export function generatePlantInsights(data: PlantFormData): DashboardData {
       healthScore,
       status,
       statusTone,
-      lastPhotoCheck: "Just now",
+      lastPhotoCheck: latestUpdate ? formatDate(latestUpdate.date) : "Just now",
       sunlightHours: data.sunlightHours,
       sunlightLabel,
       sunlightTone,
@@ -533,14 +657,19 @@ export function generatePlantInsights(data: PlantFormData): DashboardData {
       humidity: data.humidity,
       heatStressRisk,
       shadeRisk: data.shadeRisk,
-      photoFull: data.photos.full,
+      photoFull: latestUpdate?.photos.plant || data.photos.full,
     },
     comparisonData,
     careTimeline,
     reminders: dedupedReminders,
-    photoProgress: [
-      { week: "Current", note: "Setup photo", image: data.photos.full || "/chilli-hero.png" },
-    ],
+    photoProgress: latestUpdate
+      ? [
+          { week: "Current", note: "Latest update", image: latestUpdate.photos.plant || "/chilli-hero.png" },
+          { week: "Setup", note: "Initial photo", image: data.photos.full || "/chilli-hero.png" },
+        ]
+      : [
+          { week: "Current", note: "Setup photo", image: data.photos.full || "/chilli-hero.png" },
+        ],
     environmentData: [
       { label: "Location", value: data.location, icon: "location" },
       { label: "Est. Sunlight", value: sun >= 0 ? `${sun} hrs/day` : "Not set", icon: "sun" },
@@ -555,5 +684,6 @@ export function generatePlantInsights(data: PlantFormData): DashboardData {
     recommendedActions: recommendedActions.slice(0, 4),
     risks,
     positives,
+    progressUpdates,
   };
 }

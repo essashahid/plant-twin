@@ -1,21 +1,29 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
-import { DashboardData } from "@/types/plant";
-// Also import dummy data to use as initial state if needed, or start fresh.
-// The prompt says "We already have a polished dashboard... Goal: Create an onboarding/setup flow... After the user completes the setup, generate the dashboard using the entered data."
-// So we should start empty.
+import { DashboardData, ProgressUpdate } from "@/types/plant";
 
 interface PlantContextType {
   dashboardData: DashboardData | null;
   setDashboardData: (data: DashboardData | null) => void;
   hasPlant: boolean;
+  progressUpdates: ProgressUpdate[];
+  addProgressUpdate: (update: ProgressUpdate) => void;
 }
 
 const PlantContext = createContext<PlantContextType | undefined>(undefined);
 
 export function PlantProvider({ children }: { children: React.ReactNode }) {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [progressUpdates, setProgressUpdates] = useState<ProgressUpdate[]>([]);
+
+  const addProgressUpdate = (update: ProgressUpdate) => {
+    const newUpdates = [update, ...progressUpdates];
+    setProgressUpdates(newUpdates);
+    if (dashboardData) {
+      setDashboardData({ ...dashboardData, progressUpdates: newUpdates });
+    }
+  };
 
   return (
     <PlantContext.Provider
@@ -23,6 +31,8 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
         dashboardData,
         setDashboardData,
         hasPlant: dashboardData !== null,
+        progressUpdates,
+        addProgressUpdate,
       }}
     >
       {children}

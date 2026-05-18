@@ -38,7 +38,7 @@ export default function AddPlantFlow() {
 
   const submit = () => {
     // Generate dashboard data based on form input and pass it to context
-    const dashboard = generatePlantInsights(formData);
+    const dashboard = generatePlantInsights(formData, []);
     setDashboardData(dashboard);
   };
 

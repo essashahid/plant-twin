@@ -7,15 +7,18 @@ import ActualVsIdealComparison from "@/components/ActualVsIdealComparison";
 import PlantCoachCard from "@/components/PlantCoachCard";
 import CareTimeline from "@/components/CareTimeline";
 import ReminderPanel from "@/components/ReminderPanel";
-import PhotoProgressGrid from "@/components/PhotoProgressGrid";
 import EnvironmentPanel from "@/components/EnvironmentPanel";
 import FeatureTabs from "@/components/FeatureTabs";
 import AddPlantFlow from "@/components/AddPlantFlow";
 import RiskSummaryCard from "@/components/RiskSummaryCard";
+import ProgressTimeline from "@/components/ProgressTimeline";
+import PhotoProgressGridUpdated from "@/components/PhotoProgressGridUpdated";
+import ProgressComparisonCard from "@/components/ProgressComparisonCard";
+import HealthTrendCard from "@/components/HealthTrendCard";
 import { usePlant } from "@/context/PlantContext";
 
 export default function Home() {
-  const { hasPlant } = usePlant();
+  const { hasPlant, dashboardData } = usePlant();
 
   return (
     <main className="min-h-screen bg-surface-primary">
@@ -57,19 +60,56 @@ export default function Home() {
               <ReminderPanel />
             </div>
 
-            {/* 6. Photo Progress */}
-            <PhotoProgressGrid />
-
-            {/* 7. Environment */}
+            {/* 6. Environment */}
             <EnvironmentPanel />
 
-            {/* 8. Feature Tabs */}
+            {/* 7. Photo Progress Grid Updated */}
+            {dashboardData && (
+              <PhotoProgressGridUpdated
+                initialPhoto={dashboardData.plant.photoFull || "/chilli-hero.png"}
+                progressUpdates={dashboardData.progressUpdates || []}
+                healthScore={dashboardData.plant.healthScore}
+              />
+            )}
+
+            {/* 9. Progress Comparison */}
+            {dashboardData && (dashboardData.progressUpdates || []).length > 0 && (
+              <ProgressComparisonCard
+                previousUpdate={
+                  (dashboardData.progressUpdates || []).length > 1
+                    ? (dashboardData.progressUpdates || [])[1]
+                    : null
+                }
+                currentUpdate={(dashboardData.progressUpdates || [])[0]!}
+                initialHealthScore={dashboardData.plant.healthScore}
+              />
+            )}
+
+            {/* 10. Health Trend */}
+            {dashboardData && (
+              <HealthTrendCard
+                initialScore={dashboardData.plant.healthScore}
+                currentScore={
+                  (dashboardData.progressUpdates || []).length > 0
+                    ? (dashboardData.progressUpdates || [])[0]!.healthScore
+                    : dashboardData.plant.healthScore
+                }
+                progressUpdates={dashboardData.progressUpdates || []}
+              />
+            )}
+
+            {/* 11. Progress Timeline */}
+            {dashboardData && (dashboardData.progressUpdates || []).length > 0 && (
+              <ProgressTimeline updates={dashboardData.progressUpdates || []} />
+            )}
+
+            {/* 12. Feature Tabs */}
             <FeatureTabs />
 
             {/* Footer */}
             <footer className="text-center py-6 border-t border-surface-border/30">
               <p className="text-xs text-text-dim">
-                PlantTwin v0.1 · Demo Dashboard · Built with 🌱
+                PlantTwin v0.2 · Progress Tracking · Built with 🌱
               </p>
             </footer>
           </div>

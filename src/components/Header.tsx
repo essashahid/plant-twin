@@ -1,8 +1,11 @@
 "use client";
 
-import { Leaf, Camera, ClipboardList } from "lucide-react";
+import { useState } from "react";
+import { Leaf, Camera, ClipboardList, Plus } from "lucide-react";
 import { usePlant } from "@/context/PlantContext";
-import { StatusTone } from "@/types/plant";
+import { StatusTone, ProgressUpdate } from "@/types/plant";
+import AddProgressUpdateModal from "./AddProgressUpdateModal";
+import { generatePlantInsights } from "@/utils/generatePlantInsights";
 
 const statusPillTone: Record<StatusTone, string> = {
   good: "bg-status-good/10 text-status-good ring-status-good/20",
@@ -19,8 +22,57 @@ const statusDotTone: Record<StatusTone, string> = {
 };
 
 export default function Header() {
-  const { dashboardData } = usePlant();
+  const { dashboardData, setDashboardData, progressUpdates, addProgressUpdate } = usePlant();
+  const [showModal, setShowModal] = useState(false);
   const plant = dashboardData?.plant;
+
+  const handleSaveProgressUpdate = (update: ProgressUpdate) => {
+    // Calculate health score based on the update and current state
+    let score = Math.max(35, Math.min(98, plant?.healthScore ?? 85));
+    if (update.overallCondition === "Looks better") score += 8;
+    if (update.overallCondition === "Looks worse") score -= 8;
+    update.healthScore = score;
+
+    addProgressUpdate(update);
+    setShowModal(false);
+
+    // Regenerate dashboard with new progress update
+    if (dashboardData) {
+      const updatedFormData = {
+        name: dashboardData.plant.name,
+        type: dashboardData.plant.type,
+        location: dashboardData.plant.location,
+        age: `${dashboardData.plant.ageWeeks} weeks`,
+        plantedDate: "",
+        potSize: "",
+        drainageHoles: "",
+        soilType: "",
+        soilCondition: update.soilCondition,
+        compostAdded: update.compostAddedToday ? "Yes" : "No",
+        sunlightHours: dashboardData.plant.sunlightHours,
+        windExposure: dashboardData.plant.windExposure,
+        shadeRisk: dashboardData.plant.shadeRisk,
+        temperature: dashboardData.plant.temperature,
+        humidity: dashboardData.plant.humidity,
+        city: "",
+        lastWatered: "",
+        wateringFreq: "",
+        lastFertilizer: "",
+        fertilizerType: "",
+        lastPesticide: "",
+        careNotes: "",
+        photos: {
+          full: dashboardData.plant.photoFull,
+        },
+      };
+
+      const updatedDashboard = generatePlantInsights(
+        updatedFormData,
+        [update, ...progressUpdates]
+      );
+      setDashboardData(updatedDashboard);
+    }
+  };
 
   return (
     <header className="animate-fade-in-up">
@@ -59,16 +111,21 @@ export default function Header() {
         {/* Action Buttons */}
         {plant && (
           <div className="flex items-center gap-2">
-            <button className="inline-flex items-center gap-2 rounded-lg bg-surface-card px-3.5 py-2 text-sm font-medium text-text-primary ring-1 ring-surface-border transition-all hover:bg-surface-card-hover hover:ring-brand-500/20">
-              <Camera className="h-4 w-4 text-text-muted" />
-              Upload Photo
-            </button>
-            <button className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-semibold text-white transition-all hover:bg-brand-500 shadow-lg shadow-brand-600/20">
-              <ClipboardList className="h-4 w-4" />
-              Log Care
+            <button
+              onClick={() => setShowModal(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-semibold text-white transition-all hover:bg-brand-500 shadow-lg shadow-brand-600/20"
+            >
+              <Plus className="h-4 w-4" />
+              Add Progress Update
             </button>
           </div>
         )}
+
+        <AddProgressUpdateModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          onSave={handleSaveProgressUpdate}
+        />
       </div>
     </header>
   );

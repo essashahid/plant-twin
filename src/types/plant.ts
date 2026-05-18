@@ -112,6 +112,34 @@ export interface CoachData {
   followUp: string;
 }
 
+export interface ProgressUpdate {
+  id: string;
+  date: string;
+  photos: {
+    plant?: string;
+    leaf?: string;
+    soil?: string;
+  };
+  notes: string;
+  soilCondition: "Dry" | "Slightly dry" | "Moist" | "Wet" | "Compacted";
+  wateredToday: boolean;
+  fertilizedToday: boolean;
+  compostAddedToday: boolean;
+  pesticideAppliedToday: boolean;
+  visibleIssue:
+    | "None"
+    | "Yellow leaves"
+    | "Drooping leaves"
+    | "Dry soil"
+    | "Wet soil"
+    | "Spots on leaves"
+    | "Pest signs"
+    | "Slow growth"
+    | "Wilting";
+  overallCondition: "Looks better" | "Looks same" | "Looks worse";
+  healthScore: number;
+}
+
 export interface DashboardData {
   plant: PlantSummary;
   comparisonData: ComparisonRow[];
@@ -124,4 +152,5 @@ export interface DashboardData {
   recommendedActions: string[];
   risks: RiskItem[];
   positives: string[];
+  progressUpdates?: ProgressUpdate[];
 }
