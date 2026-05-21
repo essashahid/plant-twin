@@ -185,10 +185,30 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
--- Storage bucket for plant photos (optional)
--- Create a public bucket named "plant-photos" in Dashboard -> Storage,
--- or run the statement below.
+-- Storage bucket for plant photos
+-- Public bucket so uploaded images render via public URLs. The policies below
+-- let the demo (anon key) read and upload. Tighten before a real launch.
 -- ---------------------------------------------------------------------------
 insert into storage.buckets (id, name, public)
 values ('plant-photos', 'plant-photos', true)
 on conflict (id) do nothing;
+
+drop policy if exists plant_photos_read on storage.objects;
+create policy plant_photos_read on storage.objects
+  for select to anon, authenticated
+  using (bucket_id = 'plant-photos');
+
+drop policy if exists plant_photos_insert on storage.objects;
+create policy plant_photos_insert on storage.objects
+  for insert to anon, authenticated
+  with check (bucket_id = 'plant-photos');
+
+drop policy if exists plant_photos_update on storage.objects;
+create policy plant_photos_update on storage.objects
+  for update to anon, authenticated
+  using (bucket_id = 'plant-photos');
+
+drop policy if exists plant_photos_delete on storage.objects;
+create policy plant_photos_delete on storage.objects
+  for delete to anon, authenticated
+  using (bucket_id = 'plant-photos');
