@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Loader2 } from "lucide-react";
 import { ProgressUpdate } from "@/types/plant";
 import Image from "next/image";
+import { fileToDataUrl } from "@/lib/imageUtils";
 
 interface AddProgressUpdateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (update: ProgressUpdate) => void;
+  onSave: (update: ProgressUpdate) => Promise<void> | void;
 }
 
 export default function AddProgressUpdateModal({
@@ -26,13 +27,14 @@ export default function AddProgressUpdateModal({
   const [pesticideAppliedToday, setPesticideAppliedToday] = useState(false);
   const [visibleIssue, setVisibleIssue] = useState<ProgressUpdate["visibleIssue"]>("None");
   const [overallCondition, setOverallCondition] = useState<ProgressUpdate["overallCondition"]>("Looks same");
+  const [saving, setSaving] = useState(false);
 
-  const handlePhotoUpload = (type: "plant" | "leaf" | "soil", file: File) => {
-    const url = URL.createObjectURL(file);
+  const handlePhotoUpload = async (type: "plant" | "leaf" | "soil", file: File) => {
+    const url = await fileToDataUrl(file);
     setPhotos((prev) => ({ ...prev, [type]: url }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newUpdate: ProgressUpdate = {
       id: `update-${Date.now()}`,
       date,
@@ -45,10 +47,14 @@ export default function AddProgressUpdateModal({
       pesticideAppliedToday,
       visibleIssue,
       overallCondition,
-      healthScore: 0, // Will be calculated by generatePlantInsights
+      healthScore: 0, // Recalculated by generatePlantInsights on save
     };
-    onSave(newUpdate);
-    onClose();
+    setSaving(true);
+    try {
+      await onSave(newUpdate);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -245,16 +251,23 @@ export default function AddProgressUpdateModal({
           <div className="flex gap-3 pt-4 border-t border-surface-border/50">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-lg border border-surface-border text-text-primary hover:bg-surface-card transition-colors"
+              disabled={saving}
+              className="flex-1 px-4 py-2.5 rounded-lg border border-surface-border text-text-primary hover:bg-surface-card transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!photos.plant}
-              className="flex-1 px-4 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!photos.plant || saving}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Save Progress Update
+              {saving ? (
+                <>
+                  Saving<Loader2 className="h-4 w-4 animate-spin" />
+                </>
+              ) : (
+                "Save Progress Update"
+              )}
             </button>
           </div>
         </div>

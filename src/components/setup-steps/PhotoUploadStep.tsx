@@ -1,12 +1,13 @@
 import { PlantFormData } from "@/types/plant";
 import { Camera } from "lucide-react";
 import Image from "next/image";
+import { fileToDataUrl } from "@/lib/imageUtils";
 
 export default function PhotoUploadStep({ data, updateData }: { data: PlantFormData; updateData: (d: Partial<PlantFormData>) => void }) {
-  const handleUpload = (type: keyof PlantFormData["photos"], e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (type: keyof PlantFormData["photos"], e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
+      const url = await fileToDataUrl(file);
       updateData({ photos: { ...data.photos, [type]: url } });
     }
   };

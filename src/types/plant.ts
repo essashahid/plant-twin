@@ -154,3 +154,65 @@ export interface DashboardData {
   positives: string[];
   progressUpdates?: ProgressUpdate[];
 }
+
+// === Persistence-facing app types ===
+
+export interface PlantListItem {
+  id: string;
+  name: string;
+  type: string;
+  location: string;
+  healthScore: number | null;
+  status: string | null;
+  updatedAt: string;
+}
+
+export type CareActionType =
+  | "watered"
+  | "fertilized"
+  | "compost_added"
+  | "pesticide_applied"
+  | "photo_uploaded"
+  | "issue_reported"
+  | "soil_checked";
+
+export interface CareLog {
+  id: string;
+  actionType: CareActionType;
+  actionDate: string;
+  notes: string;
+}
+
+export type ReminderStatus = "pending" | "completed" | "dismissed";
+export type ReminderSource = "setup" | "rule_engine" | "progress_update" | "manual";
+
+export interface ReminderRecord {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string | null;
+  status: ReminderStatus;
+  source: ReminderSource;
+  priority: "high" | "medium" | "low";
+}
+
+export interface GeneratedInsightsRecord {
+  healthScore: number;
+  status: string;
+  growthStage: string;
+  idealStage: string;
+  confidence: string;
+  mainIssues: string[];
+  recommendedActions: string[];
+  riskLevels: RiskItem[];
+  actualVsIdeal: ComparisonRow[];
+  coachMessage: string;
+  createdAt: string;
+}
+
+export interface PlantLoadResult {
+  plantId: string;
+  formData: PlantFormData;
+  createdAt: string;
+  updatedAt: string;
+}

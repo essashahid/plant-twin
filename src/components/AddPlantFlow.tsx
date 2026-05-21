@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { usePlant } from "@/context/PlantContext";
-import { generatePlantInsights } from "@/utils/generatePlantInsights";
+import { useRouter } from "next/navigation";
+import { setupNewPlant } from "@/lib/plantService";
 import { PlantFormData } from "@/types/plant";
 import BasicInfoStep from "./setup-steps/BasicInfoStep";
 import PotSoilStep from "./setup-steps/PotSoilStep";
 import EnvironmentStep from "./setup-steps/EnvironmentStep";
 import CareRoutineStep from "./setup-steps/CareRoutineStep";
 import PhotoUploadStep from "./setup-steps/PhotoUploadStep";
-import { Check, ChevronRight, ArrowLeft } from "lucide-react";
+import { Check, ChevronRight, ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 
 const steps = [
   { id: "basic", title: "Basic Info", component: BasicInfoStep },
@@ -20,9 +20,11 @@ const steps = [
 ];
 
 export default function AddPlantFlow() {
-  const { setDashboardData } = usePlant();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
-  
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const [formData, setFormData] = useState<PlantFormData>({
     name: "", type: "Chilli Plant", location: "Balcony", age: "", plantedDate: "",
     potSize: "", drainageHoles: "Yes", soilType: "", soilCondition: "Slightly dry", compostAdded: "No",
@@ -36,10 +38,17 @@ export default function AddPlantFlow() {
   const nextStep = () => setCurrentStep(p => Math.min(p + 1, steps.length - 1));
   const prevStep = () => setCurrentStep(p => Math.max(p - 1, 0));
 
-  const submit = () => {
-    // Generate dashboard data based on form input and pass it to context
-    const dashboard = generatePlantInsights(formData, []);
-    setDashboardData(dashboard);
+  const submit = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const plantId = await setupNewPlant(formData);
+      router.push(`/plants/${plantId}`);
+    } catch (err) {
+      console.error("PlantTwin: failed to create plant", err);
+      setError("Could not save your plant. Please try again.");
+      setSaving(false);
+    }
   };
 
   const CurrentComponent = steps[currentStep].component;
@@ -78,24 +87,36 @@ export default function AddPlantFlow() {
           <CurrentComponent data={formData} updateData={updateData} />
         </div>
 
+        {error && (
+          <div className="flex items-center gap-2 mt-6 rounded-lg bg-status-danger/10 border border-status-danger/20 px-3.5 py-2.5">
+            <AlertCircle className="h-4 w-4 text-status-danger shrink-0" />
+            <p className="text-xs text-status-danger">{error}</p>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mt-8 pt-6 border-t border-surface-border/50">
-          <button 
-            onClick={prevStep} 
-            disabled={currentStep === 0}
+          <button
+            onClick={prevStep}
+            disabled={currentStep === 0 || saving}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${currentStep === 0 ? "opacity-0 pointer-events-none" : "text-text-primary bg-surface-primary hover:bg-surface-border/50 ring-1 ring-surface-border"}`}
           >
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
-          
+
           {currentStep === steps.length - 1 ? (
-            <button 
+            <button
               onClick={submit}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium bg-brand-500 hover:bg-brand-600 text-white transition-colors shadow-lg shadow-brand-500/20"
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium bg-brand-500 hover:bg-brand-600 text-white transition-colors shadow-lg shadow-brand-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Create PlantTwin <Check className="w-4 h-4" />
+              {saving ? (
+                <>Saving<Loader2 className="w-4 h-4 animate-spin" /></>
+              ) : (
+                <>Create PlantTwin <Check className="w-4 h-4" /></>
+              )}
             </button>
           ) : (
-            <button 
+            <button
               onClick={nextStep}
               className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium bg-text-primary text-surface-card hover:bg-text-primary/90 transition-colors"
             >
